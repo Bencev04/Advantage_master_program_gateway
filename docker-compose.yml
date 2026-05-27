@@ -1,0 +1,15 @@
+services:
+  gateway:
+    image: traefik:v3.3
+    container_name: advantage-program-gateway
+    restart: unless-stopped
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "${GATEWAY_HTTP_PORT:-80}:80"
+      - "${GATEWAY_DASHBOARD_PORT:-8088}:8080"
+    volumes:
+      - ./config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/dynamic:/etc/traefik/dynamic:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -1,0 +1,4 @@
+.env
+system.local.env
+.traefik/
+*.log

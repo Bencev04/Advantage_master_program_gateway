@@ -1,0 +1,29 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+log:
+  level: INFO
+
+accessLog:
+  fields:
+    defaultMode: keep
+    headers:
+      defaultMode: drop
+      names:
+        X-Request-ID: keep
+        X-Correlation-ID: keep
+        X-Causation-ID: keep

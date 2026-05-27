@@ -1,0 +1,113 @@
+http:
+  routers:
+    calendar-api:
+      rule: "Host(`calendar.advantage.localhost`) && PathPrefix(`/api`)"
+      entryPoints:
+        - web
+      service: calendar-api
+      priority: 100
+      middlewares:
+        - standard-headers
+
+    calendar-ui:
+      rule: "Host(`calendar.advantage.localhost`) || Host(`hub.advantage.localhost`)"
+      entryPoints:
+        - web
+      service: calendar-ui
+      priority: 10
+      middlewares:
+        - standard-headers
+
+    identity:
+      rule: "Host(`identity.advantage.localhost`)"
+      entryPoints:
+        - web
+      service: identity
+      middlewares:
+        - standard-headers
+
+    sales-api:
+      rule: "Host(`sales.advantage.localhost`) && PathPrefix(`/api/sales`)"
+      entryPoints:
+        - web
+      service: sales-api
+      priority: 100
+      middlewares:
+        - standard-headers
+
+    sales-ui:
+      rule: "Host(`sales.advantage.localhost`)"
+      entryPoints:
+        - web
+      service: sales-ui
+      priority: 10
+      middlewares:
+        - standard-headers
+
+    forwarding:
+      rule: "Host(`forwarding.advantage.localhost`)"
+      entryPoints:
+        - web
+      service: forwarding
+      middlewares:
+        - standard-headers
+
+    fleet:
+      rule: "Host(`fleet.advantage.localhost`)"
+      entryPoints:
+        - web
+      service: fleet
+      middlewares:
+        - standard-headers
+
+  services:
+    calendar-ui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:5174"
+
+    calendar-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:8010"
+
+    identity:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:18101"
+
+    sales-ui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:5175"
+
+    sales-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:18080"
+
+    forwarding:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:5180"
+
+    fleet:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:5181"
+
+  middlewares:
+    standard-headers:
+      headers:
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customResponseHeaders:
+          X-Gateway: "advantage-program-gateway"
