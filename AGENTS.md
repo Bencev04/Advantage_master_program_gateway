@@ -57,6 +57,7 @@ Do not add Projects routes unless the task explicitly says Projects has been bro
 From this repository root:
 
 - Validate config: `docker compose config`
+- Clone or pull sibling repos after manually cloning Gateway: `.\scripts\pull-repos.ps1`
 - Start current local system: `.\scripts\up-local.ps1 -Build`
 - Stop current local system: `.\scripts\down-local.ps1`
 - Check local system status: `.\scripts\status-local.ps1`
@@ -68,6 +69,8 @@ From this repository root:
 - Dashboard: `http://localhost:8088`
 
 The scripts intentionally orchestrate each repository's own compose file rather than merging all services into one large compose file. This keeps database volumes, environment files, and service ownership inside each bounded context while still giving developers one gateway-owned command.
+
+`pull-repos.ps1` bootstraps a workspace after Gateway has been cloned manually. It infers the GitHub owner or organization from Gateway's `origin`, clones missing sibling repositories, and pulls existing sibling repositories with `--rebase --autostash`. Gateway itself is skipped by default; pass `-IncludeGateway` to pull it too.
 
 `git-sync-repos.ps1` is a local convenience script for multi-repo git hygiene. It discovers sibling `Advantage_master_program_*` git repositories, pulls with `--rebase --autostash`, commits dirty worktrees with the supplied message, and pushes the current branch. Use `-DryRun` before broad runs when unsure.
 

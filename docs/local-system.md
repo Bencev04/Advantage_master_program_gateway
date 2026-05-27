@@ -8,6 +8,20 @@ The shared local environment source is `system.local.env` in this gateway repo.
 It is generated from `system.env.example` and synced into per-repository `.env`
 files before startup.
 
+## Bootstrap Repositories
+
+After manually cloning `Advantage_master_program_gateway/`, pull the rest of the
+sibling repositories from the same remote owner or organization:
+
+```powershell
+.\scripts\pull-repos.ps1
+```
+
+This clones missing repos next to Gateway and pulls existing repos with
+`git pull --rebase --autostash`. Use `-DryRun` to preview, `-Only` to target a
+subset, or `-RemoteBaseUrl` if Gateway's `origin` cannot be used to infer the
+remote base.
+
 ## Start Everything Available
 
 From `Advantage_master_program_gateway/`:

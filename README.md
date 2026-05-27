@@ -23,6 +23,22 @@ Projects is intentionally not routed through this gateway yet. It stays outside 
 
 ## Local Startup
 
+After manually cloning this gateway repository, pull the rest of the sibling
+repositories from the same GitHub owner/organization:
+
+```powershell
+.\scripts\pull-repos.ps1
+```
+
+The script clones missing Advantage repositories into the workspace folder next
+to Gateway and pulls existing ones with `git pull --rebase --autostash`. Gateway
+itself is skipped by default so the script does not update itself while it is
+running. Preview first with:
+
+```powershell
+.\scripts\pull-repos.ps1 -DryRun
+```
+
 Start everything currently available from this gateway repository:
 
 ```powershell
