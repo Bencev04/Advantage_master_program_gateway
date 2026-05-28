@@ -1,6 +1,7 @@
 param(
     [switch]$Volumes,
     [switch]$SkipEvents,
+    [switch]$SkipObservability,
     [switch]$SkipIdentity,
     [switch]$SkipSales,
     [switch]$SkipCalendar,
@@ -51,11 +52,15 @@ if (-not $SkipCalendar) {
 }
 
 if (-not $SkipSales) {
-    Invoke-RepoComposeDown -Name "Sales" -Folder "Advantage_master_program_Sales" -RemoveVolumes:$Volumes
+    Invoke-RepoComposeDown -Name "Sales" -Folder "Advantage_master_program_sales" -RemoveVolumes:$Volumes
 }
 
 if (-not $SkipIdentity) {
     Invoke-RepoComposeDown -Name "Identity" -Folder "Advantage_master_program_identity" -RemoveVolumes:$Volumes
+}
+
+if (-not $SkipObservability) {
+    Invoke-RepoComposeDown -Name "Observability" -Folder "Advantage_master_program_observability" -RemoveVolumes:$Volumes
 }
 
 if (-not $SkipEvents) {

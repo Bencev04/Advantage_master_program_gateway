@@ -48,12 +48,12 @@ if (-not $SkipIdentity) {
 
 if (-not $SkipSales) {
     Invoke-ComposeExec `
-        -RepoFolder "Advantage_master_program_Sales" `
+        -RepoFolder "Advantage_master_program_sales" `
         -Service "user_dba" `
         -Command @("python", "-m", "alembic", "-c", "db/user/alembic.ini", "upgrade", "head")
 
     Invoke-ComposeExec `
-        -RepoFolder "Advantage_master_program_Sales" `
+        -RepoFolder "Advantage_master_program_sales" `
         -Service "quotation_dba" `
         -Command @("python", "-m", "alembic", "-c", "db/quotation/alembic.ini", "upgrade", "head")
 }

@@ -1,6 +1,7 @@
 param(
     [switch]$Build,
     [switch]$SkipEvents,
+    [switch]$SkipObservability,
     [switch]$SkipIdentity,
     [switch]$SkipSales,
     [switch]$SkipCalendar,
@@ -111,8 +112,12 @@ if (-not $SkipIdentity) {
     Ensure-DevEnv -RepoPath (Join-Path $workspaceRoot "Advantage_master_program_identity") -Name "Identity"
 }
 
+if (-not $SkipObservability) {
+    Ensure-DevEnv -RepoPath (Join-Path $workspaceRoot "Advantage_master_program_observability") -Name "Observability"
+}
+
 if (-not $SkipSales) {
-    Ensure-DevEnv -RepoPath (Join-Path $workspaceRoot "Advantage_master_program_Sales") -Name "Sales"
+    Ensure-DevEnv -RepoPath (Join-Path $workspaceRoot "Advantage_master_program_sales") -Name "Sales"
 }
 
 if (-not $SkipCalendar) {
@@ -127,12 +132,16 @@ if (-not $SkipEvents) {
     Invoke-RepoComposeUp -Name "Events/Redpanda" -Folder "Advantage_master_program_events"
 }
 
+if (-not $SkipObservability) {
+    Invoke-RepoComposeUp -Name "Observability" -Folder "Advantage_master_program_observability" -UseBuild:$Build
+}
+
 if (-not $SkipIdentity) {
     Invoke-RepoComposeUp -Name "Identity" -Folder "Advantage_master_program_identity" -UseBuild:$Build
 }
 
 if (-not $SkipSales) {
-    Invoke-RepoComposeUp -Name "Sales" -Folder "Advantage_master_program_Sales" -UseBuild:$Build
+    Invoke-RepoComposeUp -Name "Sales" -Folder "Advantage_master_program_sales" -UseBuild:$Build
 }
 
 if (-not $SkipCalendar) {
@@ -150,6 +159,7 @@ Write-Host "Calendar:          http://calendar.advantage.localhost"
 Write-Host "Hub alias:         http://hub.advantage.localhost"
 Write-Host "Identity:          http://identity.advantage.localhost"
 Write-Host "Sales:             http://sales.advantage.localhost"
+Write-Host "Audit query API:   http://localhost:18130 (Observability)"
 Write-Host "Forwarding:        http://forwarding.advantage.localhost (placeholder until repo has a compose stack)"
 Write-Host "Fleet:             http://fleet.advantage.localhost (placeholder until repo has a compose stack)"
 Write-Host "Redpanda Kafka:    localhost:9092"

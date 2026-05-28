@@ -199,6 +199,7 @@ $identityUpdates = [ordered]@{
     SECRET_KEY = $systemValues["SYSTEM_SECRET_KEY"]
     JWT_ALGORITHM = $systemValues["SYSTEM_JWT_ALGORITHM"]
     ACCESS_TOKEN_EXPIRE_MINUTES = $systemValues["SYSTEM_ACCESS_TOKEN_EXPIRE_MINUTES"]
+    AUDIT_SERVICE_URL = $systemValues["AUDIT_SERVICE_URL"]
     ENVIRONMENT = $systemValues["SYSTEM_ENVIRONMENT"]
     LOG_LEVEL = $systemValues["SYSTEM_LOG_LEVEL"]
 }
@@ -214,8 +215,19 @@ $salesUpdates = [ordered]@{
     JWT_ALGORITHM = $systemValues["SYSTEM_JWT_ALGORITHM"]
     ACCESS_TOKEN_EXPIRE_MINUTES = $systemValues["SYSTEM_ACCESS_TOKEN_EXPIRE_MINUTES"]
     KAFKA_BOOTSTRAP_SERVERS = $systemValues["KAFKA_BOOTSTRAP_SERVERS"]
+    AUDIT_SERVICE_URL = $systemValues["AUDIT_SERVICE_URL"]
     ENVIRONMENT = $systemValues["SYSTEM_ENVIRONMENT"]
     LOG_LEVEL = $systemValues["SYSTEM_LOG_LEVEL"]
+}
+
+$observabilityUpdates = [ordered]@{
+    ENVIRONMENT = $systemValues["SYSTEM_ENVIRONMENT"]
+    LOG_LEVEL = $systemValues["SYSTEM_LOG_LEVEL"]
+    AUDIT_DB_USER = $systemValues["AUDIT_DB_USER"]
+    AUDIT_DB_NAME = $systemValues["AUDIT_DB_NAME"]
+    AUDIT_DB_PASSWORD = $systemValues["AUDIT_DB_PASSWORD"]
+    IDENTITY_SHARED_SECRET = $systemValues["SYSTEM_SECRET_KEY"]
+    KAFKA_BOOTSTRAP_SERVERS = "host.docker.internal:9092"
 }
 
 $calendarUpdates = [ordered]@{
@@ -236,7 +248,8 @@ $calendarUpdates = [ordered]@{
 
 Update-RepoEnv -RepoFolder "Advantage_master_program_gateway" -Name "Gateway" -Updates $gatewayUpdates
 Update-RepoEnv -RepoFolder "Advantage_master_program_identity" -Name "Identity" -Updates $identityUpdates
-Update-RepoEnv -RepoFolder "Advantage_master_program_Sales" -Name "Sales" -Updates $salesUpdates
+Update-RepoEnv -RepoFolder "Advantage_master_program_sales" -Name "Sales" -Updates $salesUpdates
+Update-RepoEnv -RepoFolder "Advantage_master_program_observability" -Name "Observability" -Updates $observabilityUpdates
 Update-RepoEnv -RepoFolder "Advantage_master_program_calender" -Name "Calendar" -Updates $calendarUpdates
 
 Write-Host "System environment sync complete."

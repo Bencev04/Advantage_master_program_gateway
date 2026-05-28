@@ -93,7 +93,7 @@ Preview the operations without changing repositories:
 Target only a couple of repositories when needed:
 
 ```powershell
-.\scripts\git-sync-repos.ps1 -Message "chore: sync gateway and sales" -Only Advantage_master_program_gateway,Advantage_master_program_Sales
+.\scripts\git-sync-repos.ps1 -Message "chore: sync gateway and sales" -Only Advantage_master_program_gateway,Advantage_master_program_sales
 ```
 
 The script discovers `Advantage_master_program_*` repositories under the

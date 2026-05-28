@@ -21,7 +21,7 @@ $defaultRepoFolders = @(
     "Advantage_master_program_identity",
     "Advantage_master_program_infra",
     "Advantage_master_program_observability",
-    "Advantage_master_program_Sales"
+    "Advantage_master_program_sales"
 )
 
 $gatewayRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path

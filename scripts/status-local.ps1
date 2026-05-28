@@ -4,8 +4,9 @@ $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $repos = @(
     @{ Name = "Gateway"; Folder = "Advantage_master_program_gateway" },
     @{ Name = "Calendar"; Folder = "Advantage_master_program_calender" },
-    @{ Name = "Sales"; Folder = "Advantage_master_program_Sales" },
+    @{ Name = "Sales"; Folder = "Advantage_master_program_sales" },
     @{ Name = "Identity"; Folder = "Advantage_master_program_identity" },
+    @{ Name = "Observability"; Folder = "Advantage_master_program_observability" },
     @{ Name = "Events/Redpanda"; Folder = "Advantage_master_program_events" }
 )
 
