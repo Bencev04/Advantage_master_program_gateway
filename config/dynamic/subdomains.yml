@@ -7,6 +7,7 @@ http:
       service: calendar-api
       priority: 100
       middlewares:
+        - calendar-api-strip
         - standard-headers
 
     calendar-ui:
@@ -18,11 +19,41 @@ http:
       middlewares:
         - standard-headers
 
+    identity-admin:
+      rule: "Host(`identity.advantage.localhost`) && PathPrefix(`/admin`)"
+      entryPoints:
+        - web
+      service: identity-admin
+      priority: 100
+      middlewares:
+        - standard-headers
+
+    identity-api:
+      rule: "Host(`identity.advantage.localhost`) && PathPrefix(`/api/identity`)"
+      entryPoints:
+        - web
+      service: identity-logic
+      priority: 90
+      middlewares:
+        - identity-api-strip
+        - standard-headers
+
+    identity-audit-api:
+      rule: "Host(`identity.advantage.localhost`) && PathPrefix(`/api/audit`)"
+      entryPoints:
+        - web
+      service: audit-service
+      priority: 95
+      middlewares:
+        - audit-api-strip
+        - standard-headers
+
     identity:
       rule: "Host(`identity.advantage.localhost`)"
       entryPoints:
         - web
       service: identity
+      priority: 10
       middlewares:
         - standard-headers
 
@@ -79,6 +110,24 @@ http:
         servers:
           - url: "http://host.docker.internal:18101"
 
+    identity-admin:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:5182"
+
+    identity-logic:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:18106"
+
+    audit-service:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:18005"
+
     sales-ui:
       loadBalancer:
         passHostHeader: true
@@ -105,9 +154,36 @@ http:
 
   middlewares:
     standard-headers:
+      # Stamps the gateway as the last hop for observability and adds a
+      # `X-Forwarded-Gateway` request header so backends can tell traffic
+      # that came through Traefik apart from direct dev hits.
+      # Backends mint X-Request-ID / X-Correlation-ID via their
+      # ObservabilityMiddleware when the client did not send one — Traefik
+      # does not yet provide a built-in "only-if-missing" header writer.
+      # Documented contract:
+      #   * Clients SHOULD send X-Request-ID / X-Correlation-ID / X-Causation-ID.
+      #   * Gateway preserves them through to upstreams (passHostHeader).
+      #   * Backends mint them if absent (advantage_observability).
       headers:
         contentTypeNosniff: true
         browserXssFilter: true
         referrerPolicy: "strict-origin-when-cross-origin"
+        customRequestHeaders:
+          X-Forwarded-Gateway: "advantage-program-gateway"
         customResponseHeaders:
           X-Gateway: "advantage-program-gateway"
+
+    identity-api-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/identity"
+
+    audit-api-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/audit"
+
+    calendar-api-strip:
+      stripPrefix:
+        prefixes:
+          - "/api"
