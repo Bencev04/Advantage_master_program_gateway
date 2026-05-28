@@ -93,7 +93,7 @@ function Ensure-SystemLocalEnv {
 
     $defaults = [ordered]@{
         SYSTEM_ENVIRONMENT = "development"
-        SYSTEM_LOG_LEVEL = "INFO"
+        SYSTEM_LOG_LEVEL = "info"
         SYSTEM_JWT_ALGORITHM = "HS256"
         SYSTEM_ACCESS_TOKEN_EXPIRE_MINUTES = "480"
         SYSTEM_ACCESS_TOKEN_COOKIE_NAME = "access_token"
