@@ -119,6 +119,9 @@ function Ensure-SystemLocalEnv {
         SALES_USER_DB = "advantage_user"
         SALES_QUOTATION_DB = "advantage_quotation"
         CALENDAR_DATABASE_URL = ""
+        AUDIT_DB_USER = "audit"
+        AUDIT_DB_NAME = "advantage_audit"
+        AUDIT_SERVICE_URL = "http://host.docker.internal:18130"
     }
 
     foreach ($key in $defaults.Keys) {
@@ -133,6 +136,10 @@ function Ensure-SystemLocalEnv {
 
     if (-not $system.Contains("SYSTEM_POSTGRES_PASSWORD") -or -not $system["SYSTEM_POSTGRES_PASSWORD"] -or $system["SYSTEM_POSTGRES_PASSWORD"].StartsWith("REPLACE_ME")) {
         $system["SYSTEM_POSTGRES_PASSWORD"] = New-LocalPassword
+    }
+
+    if (-not $system.Contains("AUDIT_DB_PASSWORD") -or -not $system["AUDIT_DB_PASSWORD"] -or $system["AUDIT_DB_PASSWORD"].StartsWith("REPLACE_ME")) {
+        $system["AUDIT_DB_PASSWORD"] = New-LocalPassword
     }
 
     Write-DotEnv -Path $systemLocalPath -Values $system

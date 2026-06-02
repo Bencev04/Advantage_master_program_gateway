@@ -93,7 +93,7 @@ function Invoke-RepoComposeUp {
     Write-Host "Starting $Name..."
     Push-Location $repoPath
     try {
-        $composeArgs = @("compose", "up", "-d")
+        $composeArgs = @("compose", "up", "-d", "--remove-orphans")
         if ($UseBuild) {
             $composeArgs += "--build"
         }
