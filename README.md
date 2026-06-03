@@ -61,9 +61,9 @@ Stop everything:
 .\scripts\down-local.ps1
 ```
 
-The scripts start Events/Redpanda, Identity, Sales, Calendar, and the gateway in
-the right order. Forwarding and Fleet are routed but currently have no compose
-stacks to start.
+The scripts start Events/Redpanda, Observability, Identity, Sales, Calendar, and
+the gateway in the right order. Forwarding and Fleet are routed but currently have
+no compose stacks to start.
 
 Sync environment files without starting containers:
 

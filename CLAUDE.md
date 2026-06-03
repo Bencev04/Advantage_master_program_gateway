@@ -44,7 +44,7 @@ docker compose config               # validate Traefik labels/config
 
 - **PowerShell-only.** All scripts use PowerShell idioms (`-Param`, `$env:`, backtick). Don't expect bash/WSL equivalents — they don't exist.
 - **`pull-repos.ps1` exit codes are honest.** If it exits 1, at least one git command actually failed — don't dismiss it as PowerShell-stderr-noise. Read the per-repo "failed:" lines at the bottom of the run.
-- **No top-level git repo.** `D:\advantage` is a workspace, not a monorepo. Each `Advantage_master_program_*` folder has its own `.git` and lifecycle. `pull-repos.ps1` is how you keep them in sync; it intentionally skips Gateway itself unless `-IncludeGateway` is passed.
+- **No top-level git repo.** The `Advantage_master` workspace root is a folder, not a monorepo. Each `Advantage_master_program_*` folder has its own `.git` and lifecycle. `pull-repos.ps1` is how you keep them in sync; it intentionally skips Gateway itself unless `-IncludeGateway` is passed.
 - **`sync-env.ps1` overwrites per-repo `.env`.** Shared values live in `system.local.env` (git-ignored, generated from `system.env.example`). Edits made directly in a sibling's `.env` are lost the next time sync runs.
 - **Traefik does routing only.** No token validation, no role enforcement, no Kafka. Don't push auth decisions into Traefik middlewares; apps must verify Identity-issued tokens themselves.
 - **`forwarding.*.localhost` / `fleet.*.localhost` have routes but no upstream yet.** Empty scaffold repos; expect 502/connection refused when you hit them.

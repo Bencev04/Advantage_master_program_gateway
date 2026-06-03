@@ -13,7 +13,9 @@ $ErrorActionPreference = "Stop"
 $gatewayRepoName = "Advantage_master_program_gateway"
 $defaultRepoFolders = @(
     "Advantage_master_program_calender",
+    "Advantage_master_program_comms",
     "Advantage_master_program_depl",
+    "Advantage_master_program_design",
     "Advantage_master_program_events",
     "Advantage_master_program_fleet",
     "Advantage_master_program_forwarding",
@@ -21,7 +23,7 @@ $defaultRepoFolders = @(
     "Advantage_master_program_identity",
     "Advantage_master_program_infra",
     "Advantage_master_program_observability",
-    "Advantage_master_program_sales"
+    "Advantage_master_program_Sales"
 )
 
 $gatewayRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path

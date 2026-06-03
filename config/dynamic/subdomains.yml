@@ -26,6 +26,7 @@ http:
       service: identity-admin
       priority: 100
       middlewares:
+        - identity-admin-trailing-slash
         - standard-headers
 
     identity-api:
@@ -172,6 +173,19 @@ http:
           X-Forwarded-Gateway: "advantage-program-gateway"
         customResponseHeaders:
           X-Gateway: "advantage-program-gateway"
+
+    identity-admin-trailing-slash:
+      # Identity's admin SPA (Vite) is served only at its configured base
+      # "/admin/". A bare "/admin" — e.g. cross-app launcher links from Sales,
+      # Identity itself, bookmarks, or a typed URL — makes Vite reject the
+      # request with "The server is configured with a public base URL of /admin/
+      # — did you mean to visit /admin/ instead?". Rather than fix the trailing
+      # slash in every service's launcher href, normalise it once here at the
+      # edge so every current and future entry point resolves.
+      redirectRegex:
+        regex: "^(https?://[^/]+)/admin$"
+        replacement: "${1}/admin/"
+        permanent: false
 
     identity-api-strip:
       stripPrefix:

@@ -33,6 +33,7 @@ From `Advantage_master_program_gateway/`:
 The script starts:
 
 - Events/Redpanda
+- Observability
 - Identity
 - Sales
 - Calendar
@@ -83,6 +84,7 @@ skipped until its read-model Alembic setup exists.
 - Identity: `http://identity.advantage.localhost`
 - Sales React app: `http://sales.advantage.localhost`
 - Sales API facade: `http://sales.advantage.localhost/api/sales/health`
+- Observability audit query API: `http://localhost:18130`
 - Redpanda Kafka API: `localhost:9092`
 
 ## Notes

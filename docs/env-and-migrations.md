@@ -66,8 +66,7 @@ Run after containers are up:
 Current migration commands:
 
 - Identity: `db/identity/alembic.ini` through the `identity_dba` container.
-- Sales user DB: `db/user/alembic.ini` through the `user_dba` container.
-- Sales quotation DB: `db/quotation/alembic.ini` through the `quotation_dba` container.
+- Sales quotation DB: `db/quotation/alembic.ini` through the `quotation_dba` container. Quotation is the only Sales database; the former Sales user DB (`db/user`/`user_dba`) was removed.
 - Calendar: skipped until Calendar read-model migrations are added.
 
 Do not create cross-service migrations or shared database schemas from the
