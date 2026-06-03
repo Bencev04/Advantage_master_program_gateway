@@ -127,7 +127,10 @@ http:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: "http://host.docker.internal:18005"
+          # audit_service (Observability) publishes on host port 18130 — see
+          # system.env AUDIT_SERVICE_URL and docs/local-system.md. (Was 18005,
+          # which nothing listens on → 502 on every /api/audit request.)
+          - url: "http://host.docker.internal:18130"
 
     sales-ui:
       loadBalancer:
