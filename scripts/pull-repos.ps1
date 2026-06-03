@@ -256,7 +256,22 @@ foreach ($repo in $repositories) {
             Pull-ExistingRepository -Repo $repo
         }
         elseif (Test-Path $repo.Path) {
-            throw "Target path already exists but is not a git repository: $($repo.Path)"
+            $entries = @(Get-ChildItem -LiteralPath $repo.Path -Force -ErrorAction SilentlyContinue)
+            if ($entries.Count -eq 0) {
+                # An empty directory (often left behind by a stopped docker volume
+                # mount on a fresh workspace) — safe to clone into it. Remove it
+                # first so `git clone` accepts the path.
+                if ($DryRun) {
+                    Write-Host "[dry-run] Would remove empty directory $($repo.Path) and clone $($repo.Name) into it"
+                }
+                else {
+                    Remove-Item -LiteralPath $repo.Path -Force -Recurse
+                    Clone-Repository -Repo $repo -BaseUrl $remoteBase
+                }
+            }
+            else {
+                throw "Target path already exists but is not a git repository: $($repo.Path)"
+            }
         }
         else {
             Clone-Repository -Repo $repo -BaseUrl $remoteBase

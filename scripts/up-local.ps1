@@ -5,12 +5,27 @@ param(
     [switch]$SkipIdentity,
     [switch]$SkipSales,
     [switch]$SkipCalendar,
-    [switch]$SkipGateway
+    [switch]$SkipGateway,
+    [switch]$SkipPullRepos
 )
 
 $ErrorActionPreference = "Stop"
 
 $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+
+# Make sure all sibling repos exist before any compose stack starts. Several
+# stacks mount sibling directories (e.g. Sales/Identity frontends mount
+# Advantage_master_program_design for the shared @advantage/design-system
+# package). If the sibling is missing, docker creates an empty dir for the
+# mount, npm install resolves the file: dependency to nothing, and the app
+# explodes at runtime. -SkipPullRepos opts out for offline iteration.
+if (-not $SkipPullRepos) {
+    $pullReposScript = Join-Path $PSScriptRoot "pull-repos.ps1"
+    if (Test-Path $pullReposScript) {
+        Write-Host "Ensuring sibling repos are present..."
+        & $pullReposScript -SkipPull
+    }
+}
 
 $syncEnvScript = Join-Path $PSScriptRoot "sync-env.ps1"
 if (Test-Path $syncEnvScript) {
