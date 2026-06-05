@@ -9,6 +9,18 @@ api:
 entryPoints:
   web:
     address: ":80"
+  # Prometheus exposition for the monitoring stack (scraped at
+  # host.docker.internal:8082/metrics — see
+  # Advantage_master_program_observability/monitoring/prometheus/prometheus.yml).
+  metrics:
+    address: ":8082"
+
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
 
 providers:
   file:

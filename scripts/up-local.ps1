@@ -2,6 +2,7 @@ param(
     [switch]$Build,
     [switch]$SkipEvents,
     [switch]$SkipObservability,
+    [switch]$SkipMonitoring,
     [switch]$SkipIdentity,
     [switch]$SkipSales,
     [switch]$SkipCalendar,
@@ -151,6 +152,20 @@ if (-not $SkipObservability) {
     Invoke-RepoComposeUp -Name "Observability" -Folder "Advantage_master_program_observability" -UseBuild:$Build
 }
 
+if (-not $SkipMonitoring) {
+    # Prometheus/Loki/Grafana/Alertmanager + Alloy log collection. Started
+    # early so Loki captures the rest of the stack's startup logs; Prometheus
+    # tolerates targets that aren't up yet (they just read up==0 until ready).
+    # sync-env.ps1 (run above) renders the Alertmanager/ntfy configs it mounts.
+    $monitoringConfig = Join-Path $workspaceRoot "Advantage_master_program_observability\monitoring\alertmanager\alertmanager.yml"
+    if (-not (Test-Path $monitoringConfig)) {
+        Write-Warning "Monitoring skipped: rendered alertmanager.yml not found. Run scripts\sync-env.ps1 first."
+    }
+    else {
+        Invoke-RepoComposeUp -Name "Monitoring" -Folder "Advantage_master_program_observability\monitoring"
+    }
+}
+
 if (-not $SkipIdentity) {
     Invoke-RepoComposeUp -Name "Identity" -Folder "Advantage_master_program_identity" -UseBuild:$Build
 }
@@ -178,5 +193,7 @@ Write-Host "Audit query API:   http://localhost:18130 (Observability)"
 Write-Host "Forwarding:        http://forwarding.advantage.localhost (placeholder until repo has a compose stack)"
 Write-Host "Fleet:             http://fleet.advantage.localhost (placeholder until repo has a compose stack)"
 Write-Host "Redpanda Kafka:    localhost:9092"
+Write-Host "Grafana:           http://grafana.advantage.localhost (admin / GRAFANA_ADMIN_PASSWORD from system.local.env)"
+Write-Host "Prometheus:        http://localhost:9090   Alertmanager: http://localhost:9093"
 Write-Host ""
 Write-Host "This script syncs gateway/system.local.env into per-repo .env files for local development. Replace generated secrets before any non-local use."

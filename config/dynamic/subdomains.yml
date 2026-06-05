@@ -92,6 +92,18 @@ http:
       middlewares:
         - standard-headers
 
+    # Monitoring UI (Observability repo's monitoring stack). Grafana has its
+    # own login; Prometheus/Alertmanager stay unrouted on localhost:9090/9093
+    # because they are unauthenticated.
+    grafana:
+      rule: "Host(`grafana.advantage.localhost`)"
+      entryPoints:
+        - web
+      service: grafana
+      priority: 10
+      middlewares:
+        - standard-headers
+
   services:
     calendar-ui:
       loadBalancer:
@@ -155,6 +167,12 @@ http:
         passHostHeader: true
         servers:
           - url: "http://host.docker.internal:5181"
+
+    grafana:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://host.docker.internal:3000"
 
   middlewares:
     standard-headers:

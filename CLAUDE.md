@@ -17,7 +17,9 @@
 - `sales.advantage.localhost/api/sales/*` → Sales API facade (18080)
 - `forwarding.advantage.localhost` → Forwarding (5180) — routed but no compose stack yet
 - `fleet.advantage.localhost` → Fleet (5181) — routed but no compose stack yet
+- `grafana.advantage.localhost` → Grafana (3000, monitoring stack in the Observability repo)
 - Traefik dashboard: `http://localhost:8088/dashboard/`
+- Traefik Prometheus metrics: `http://localhost:8082/metrics` (dedicated `metrics` entrypoint; scraped by the monitoring stack). Prometheus/Alertmanager UIs are deliberately NOT routed (no auth) — use `localhost:9090`/`localhost:9093`.
 
 ## Commands you'll actually run
 

@@ -2,6 +2,7 @@ param(
     [switch]$Volumes,
     [switch]$SkipEvents,
     [switch]$SkipObservability,
+    [switch]$SkipMonitoring,
     [switch]$SkipIdentity,
     [switch]$SkipSales,
     [switch]$SkipCalendar,
@@ -41,6 +42,12 @@ function Invoke-RepoComposeDown {
     finally {
         Pop-Location
     }
+}
+
+if (-not $SkipMonitoring) {
+    # First down: nothing depends on monitoring, and stopping it last would
+    # just record a burst of ServiceDown alerts for the intentional teardown.
+    Invoke-RepoComposeDown -Name "Monitoring" -Folder "Advantage_master_program_observability\monitoring" -RemoveVolumes:$Volumes
 }
 
 if (-not $SkipGateway) {

@@ -7,6 +7,7 @@ $repos = @(
     @{ Name = "Sales"; Folder = "Advantage_master_program_sales" },
     @{ Name = "Identity"; Folder = "Advantage_master_program_identity" },
     @{ Name = "Observability"; Folder = "Advantage_master_program_observability" },
+    @{ Name = "Monitoring"; Folder = "Advantage_master_program_observability\monitoring" },
     @{ Name = "Events/Redpanda"; Folder = "Advantage_master_program_events" }
 )
 

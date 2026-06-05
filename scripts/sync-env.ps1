@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$DryRun
 )
 
@@ -19,7 +19,7 @@ function New-LocalPassword {
 }
 
 function New-FernetKey {
-    # urlsafe-base64 of 32 random bytes — the format cryptography.Fernet expects.
+    # urlsafe-base64 of 32 random bytes - the format cryptography.Fernet expects.
     $bytes = New-Object 'System.Byte[]' 32
     $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
     $rng.GetBytes($bytes)
@@ -137,6 +137,13 @@ function Ensure-SystemLocalEnv {
         COMMS_SMTP_HOST = "smtp.gmail.com"
         COMMS_SMTP_PORT = "587"
         COMMS_INTERNAL_URL = "http://host.docker.internal:8040"
+        # Monitoring stack (Observability repo's monitoring/ compose project).
+        GATEWAY_METRICS_PORT = "8082"
+        GRAFANA_HOST = "grafana.advantage.localhost"
+        NTFY_SERVER = "https://ntfy.sh"
+        GMAIL_SMTP_HOST = "smtp.gmail.com"
+        GMAIL_SMTP_PORT = "587"
+        ALERT_EMAIL_TO = "bence.ben.veres@gmail.com"
     }
 
     foreach ($key in $defaults.Keys) {
@@ -172,6 +179,28 @@ function Ensure-SystemLocalEnv {
     # Fernet key encrypting per-tenant SMTP passwords at rest in Communications.
     if (-not $system.Contains("COMMS_SECRET_ENCRYPTION_KEY") -or -not $system["COMMS_SECRET_ENCRYPTION_KEY"] -or $system["COMMS_SECRET_ENCRYPTION_KEY"].StartsWith("REPLACE_ME")) {
         $system["COMMS_SECRET_ENCRYPTION_KEY"] = New-FernetKey
+    }
+
+    # Grafana admin login for the monitoring stack.
+    if (-not $system.Contains("GRAFANA_ADMIN_PASSWORD") -or -not $system["GRAFANA_ADMIN_PASSWORD"] -or $system["GRAFANA_ADMIN_PASSWORD"].StartsWith("REPLACE_ME")) {
+        $system["GRAFANA_ADMIN_PASSWORD"] = New-LocalPassword
+    }
+
+    # ntfy push topic: on ntfy.sh the topic name is the only access control, so
+    # it must be unguessable. Generated once and kept (the phone app subscribes
+    # to this exact value - see monitoring/README.md).
+    if (-not $system.Contains("NTFY_TOPIC") -or -not $system["NTFY_TOPIC"] -or $system["NTFY_TOPIC"].StartsWith("REPLACE_ME")) {
+        $system["NTFY_TOPIC"] = "advantage-alerts-{0}" -f ([guid]::NewGuid().ToString("N"))
+    }
+
+    # Gmail SMTP creds for ALERT email cannot be generated - ensure the keys
+    # exist so the user can fill them in; never overwrite a user-set value.
+    # (Infra self-monitoring creds - distinct from Comms' tenant SMTP secrets.)
+    if (-not $system.Contains("GMAIL_SMTP_USER")) {
+        $system["GMAIL_SMTP_USER"] = ""
+    }
+    if (-not $system.Contains("GMAIL_SMTP_APP_PASSWORD")) {
+        $system["GMAIL_SMTP_APP_PASSWORD"] = ""
     }
 
     Write-DotEnv -Path $systemLocalPath -Values $system
@@ -217,11 +246,64 @@ function Update-RepoEnv {
     Write-DotEnv -Path $envPath -Values $values
 }
 
+function Render-MonitoringConfigs {
+    param([Parameter(Mandatory = $true)]$System)
+
+    $monitoringRoot = Join-Path $workspaceRoot "Advantage_master_program_observability\monitoring"
+    if (-not (Test-Path $monitoringRoot)) {
+        Write-Warning "Monitoring folder not found at $monitoringRoot. Skipping config render."
+        return
+    }
+
+    # Alertmanager and ntfy-alertmanager don't expand env vars in their config
+    # files, so the committed .tmpl files are rendered here with real values.
+    # Rendered outputs are gitignored (they contain the Gmail app password).
+    $gmailUser = $System["GMAIL_SMTP_USER"]
+    $gmailPassword = $System["GMAIL_SMTP_APP_PASSWORD"]
+    $smtpFrom = if ($gmailUser) { $gmailUser } else { "alertmanager@advantage.local" }
+    if (-not $gmailPassword) {
+        Write-Warning "GMAIL_SMTP_USER / GMAIL_SMTP_APP_PASSWORD not set in system.local.env - alert EMAIL delivery will fail until they are (ntfy push still works). See Advantage_master_program_observability/monitoring/README.md."
+    }
+
+    $amTemplate = Join-Path $monitoringRoot "alertmanager\alertmanager.yml.tmpl"
+    $amOut = Join-Path $monitoringRoot "alertmanager\alertmanager.yml"
+    $amContent = (Get-Content $amTemplate -Raw).
+        Replace("__GMAIL_SMTP_HOST__", $System["GMAIL_SMTP_HOST"]).
+        Replace("__GMAIL_SMTP_PORT__", $System["GMAIL_SMTP_PORT"]).
+        Replace("__SMTP_FROM__", $smtpFrom).
+        Replace("__GMAIL_SMTP_USER__", $gmailUser).
+        Replace("__GMAIL_SMTP_APP_PASSWORD__", $gmailPassword).
+        Replace("__ALERT_EMAIL_TO__", $System["ALERT_EMAIL_TO"])
+    if (-not $gmailPassword) {
+        # No creds yet: drop the smtp_auth_* lines so the rendered config stays
+        # valid - email sends fail at notify time (logged) instead of crashing
+        # Alertmanager and taking ntfy down with it.
+        $amContent = (($amContent -split "`n") | Where-Object { $_ -notmatch "smtp_auth_" }) -join "`n"
+    }
+
+    $ntfyTemplate = Join-Path $monitoringRoot "alertmanager\ntfy-alertmanager.scfg.tmpl"
+    $ntfyOut = Join-Path $monitoringRoot "alertmanager\ntfy-alertmanager.scfg"
+    $ntfyContent = (Get-Content $ntfyTemplate -Raw).
+        Replace("__NTFY_SERVER__", $System["NTFY_SERVER"]).
+        Replace("__NTFY_TOPIC__", $System["NTFY_TOPIC"])
+
+    if ($DryRun) {
+        Write-Host "Would render $amOut and $ntfyOut"
+        return
+    }
+
+    # UTF-8 without BOM - a BOM can break the scfg/yaml parsers.
+    [System.IO.File]::WriteAllText($amOut, $amContent)
+    [System.IO.File]::WriteAllText($ntfyOut, $ntfyContent)
+    Write-Host "Rendered alertmanager.yml + ntfy-alertmanager.scfg (ntfy topic: $($System["NTFY_TOPIC"]))."
+}
+
 $systemValues = Ensure-SystemLocalEnv
 
 $gatewayUpdates = [ordered]@{
     GATEWAY_HTTP_PORT = $systemValues["GATEWAY_HTTP_PORT"]
     GATEWAY_DASHBOARD_PORT = $systemValues["GATEWAY_DASHBOARD_PORT"]
+    GATEWAY_METRICS_PORT = $systemValues["GATEWAY_METRICS_PORT"]
     CALENDAR_HOST = $systemValues["CALENDAR_HOST"]
     CALENDAR_ALIAS_HOST = $systemValues["CALENDAR_ALIAS_HOST"]
     IDENTITY_HOST = $systemValues["IDENTITY_HOST"]
@@ -271,6 +353,7 @@ $salesUpdates = [ordered]@{
 # + sender identity to validate/seed the profile and fetch the quote PDF.
 $communicationsUpdates = [ordered]@{
     ENVIRONMENT = $systemValues["SYSTEM_ENVIRONMENT"]
+    LOG_LEVEL = $systemValues["SYSTEM_LOG_LEVEL"]
     INTERNAL_SERVICE_TOKEN = $systemValues["INTERNAL_SERVICE_TOKEN"]
     SALES_INTERNAL_BASE_URL = $systemValues["SALES_INTERNAL_PUBLIC_BASE_URL"]
     QUOTE_SENDER_PROFILE_ID = $systemValues["QUOTE_SENDER_PROFILE_ID"]
@@ -294,8 +377,37 @@ $observabilityUpdates = [ordered]@{
     KAFKA_BOOTSTRAP_SERVERS = "host.docker.internal:9092"
 }
 
+# Forwarding shares the system secret + Kafka broker; its compose containers
+# reach Redpanda via host.docker.internal (same pattern as Comms/Observability).
+$forwardingUpdates = [ordered]@{
+    ENVIRONMENT = $systemValues["SYSTEM_ENVIRONMENT"]
+    LOG_LEVEL = $systemValues["SYSTEM_LOG_LEVEL"]
+    SECRET_KEY = $systemValues["SYSTEM_SECRET_KEY"]
+    JWT_ALGORITHM = $systemValues["SYSTEM_JWT_ALGORITHM"]
+    ACCESS_TOKEN_COOKIE_NAME = $systemValues["SYSTEM_ACCESS_TOKEN_COOKIE_NAME"]
+    IDENTITY_LOGIN_URL = $systemValues["IDENTITY_LOGIN_URL"]
+    IDENTITY_LOGOUT_URL = $systemValues["IDENTITY_LOGOUT_URL"]
+    FORWARDING_APP_URL = $systemValues["FORWARDING_APP_URL"]
+    KAFKA_BOOTSTRAP_SERVERS = "host.docker.internal:9092"
+}
+
+# Monitoring stack secrets (Grafana login, alert email, ntfy push). The
+# alerting SMTP creds are infra self-monitoring creds and live here, NOT in
+# Comms - the "Comms owns email creds" rule covers tenant-facing mail only.
+$monitoringUpdates = [ordered]@{
+    GRAFANA_ADMIN_PASSWORD = $systemValues["GRAFANA_ADMIN_PASSWORD"]
+    GMAIL_SMTP_HOST = $systemValues["GMAIL_SMTP_HOST"]
+    GMAIL_SMTP_PORT = $systemValues["GMAIL_SMTP_PORT"]
+    GMAIL_SMTP_USER = $systemValues["GMAIL_SMTP_USER"]
+    GMAIL_SMTP_APP_PASSWORD = $systemValues["GMAIL_SMTP_APP_PASSWORD"]
+    ALERT_EMAIL_TO = $systemValues["ALERT_EMAIL_TO"]
+    NTFY_SERVER = $systemValues["NTFY_SERVER"]
+    NTFY_TOPIC = $systemValues["NTFY_TOPIC"]
+}
+
 $calendarUpdates = [ordered]@{
     ENVIRONMENT = $systemValues["SYSTEM_ENVIRONMENT"]
+    LOG_LEVEL = $systemValues["SYSTEM_LOG_LEVEL"]
     SECRET_KEY = $systemValues["SYSTEM_SECRET_KEY"]
     JWT_ALGORITHM = $systemValues["SYSTEM_JWT_ALGORITHM"]
     ACCESS_TOKEN_COOKIE_NAME = $systemValues["SYSTEM_ACCESS_TOKEN_COOKIE_NAME"]
@@ -316,6 +428,13 @@ Update-RepoEnv -RepoFolder "Advantage_master_program_sales" -Name "Sales" -Updat
 Update-RepoEnv -RepoFolder "Advantage_master_program_comms" -Name "Communications" -Updates $communicationsUpdates
 Update-RepoEnv -RepoFolder "Advantage_master_program_observability" -Name "Observability" -Updates $observabilityUpdates
 Update-RepoEnv -RepoFolder "Advantage_master_program_calender" -Name "Calendar" -Updates $calendarUpdates
+Update-RepoEnv -RepoFolder "Advantage_master_program_forwarding" -Name "Forwarding" -Updates $forwardingUpdates
+Update-RepoEnv -RepoFolder "Advantage_master_program_observability\monitoring" -Name "Monitoring" -Updates $monitoringUpdates
+Render-MonitoringConfigs -System $systemValues
 
 Write-Host "System environment sync complete."
 Write-Host "Shared local source: $systemLocalPath"
+Write-Host "ntfy alert topic (subscribe in the ntfy app): $($systemValues["NTFY_TOPIC"])"
+if (-not $systemValues["GMAIL_SMTP_APP_PASSWORD"]) {
+    Write-Host "NOTE: alert email is not configured yet - set GMAIL_SMTP_USER + GMAIL_SMTP_APP_PASSWORD in system.local.env and re-run." -ForegroundColor Yellow
+}
